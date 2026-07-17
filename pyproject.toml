@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "internet-monitor-pro"
-version = "0.1.23"
+version = "0.1.26"
 description = "Windows tray application for internet status, IP changes, speedtests and daily reports"
 requires-python = ">=3.11"
 dependencies = [
