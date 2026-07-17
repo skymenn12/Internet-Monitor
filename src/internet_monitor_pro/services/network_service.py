@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import os
+import math
 import socket
 import sys
 import time
 from dataclasses import dataclass
 from typing import Iterable
 from urllib.request import Request, urlopen
+
+
+MAX_VALID_PING_MS = 60_000.0
 
 
 @dataclass(slots=True)
@@ -91,11 +95,14 @@ class NetworkService:
             download_bps = st.download()
             upload_bps = st.upload(pre_allocate=False)
             results = st.results.dict()
+            ping_ms = float(results.get("ping", 0.0))
+            if not math.isfinite(ping_ms) or not 0.0 <= ping_ms <= MAX_VALID_PING_MS:
+                raise ValueError(f"Ungültiger Pingwert vom Speedtest-Server: {ping_ms!r} ms")
             return SpeedtestResult(
                 ok=True,
                 download_mbps=round(download_bps / 1_000_000, 2),
                 upload_mbps=round(upload_bps / 1_000_000, 2),
-                ping_ms=round(float(results.get("ping", 0.0)), 2),
+                ping_ms=round(ping_ms, 2),
                 server=str(results.get("server", {}).get("name", "")),
                 isp=str(results.get("client", {}).get("isp", "")),
             )

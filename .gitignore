@@ -31,6 +31,5 @@ reports/
 config.local.json
 
 # PyInstaller / Inno
-*.spec
 Output/
 dist_installer/

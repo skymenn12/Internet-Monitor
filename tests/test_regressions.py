@@ -73,3 +73,33 @@ def test_app_and_installer_use_one_autostart_registry_name() -> None:
 def test_background_duplicate_start_is_silent() -> None:
     assert startup_service.should_notify_duplicate_start(["InternetMonitorPro.exe", "--minimized"]) is False
     assert startup_service.should_notify_duplicate_start(["InternetMonitorPro.exe"]) is True
+
+
+def test_enabling_autostart_replaces_legacy_registry_entry(monkeypatch) -> None:
+    calls: list[tuple] = []
+
+    class _Key:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+    fake_winreg = types.SimpleNamespace(
+        HKEY_CURRENT_USER=object(),
+        KEY_SET_VALUE=1,
+        REG_SZ=1,
+        OpenKey=lambda *_args: _Key(),
+        SetValueEx=lambda _key, name, _reserved, _kind, value: calls.append(("set", name, value)),
+        DeleteValue=lambda _key, name: calls.append(("delete", name)),
+    )
+    monkeypatch.setattr(startup_service, "winreg", fake_winreg, raising=False)
+    monkeypatch.setattr(startup_service.os, "name", "nt")
+    monkeypatch.setattr(startup_service.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(startup_service.sys, "executable", r"C:\Program Files\Internet-Protokoll\InternetMonitorPro.exe")
+
+    startup_service.StartupService.set_enabled(True, start_minimized=True)
+
+    assert ("delete", "InternetMonitorPro") in calls
+    canonical = next(call for call in calls if call[:2] == ("set", "InternetProtokoll"))
+    assert canonical[2].endswith('InternetMonitorPro.exe" --minimized')

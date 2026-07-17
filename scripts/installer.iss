@@ -126,7 +126,7 @@ begin
     '  },' + #13#10 +
     '  "reporting": {"enabled": true, "daily_report_time": "23:55"},' + #13#10 +
     '  "logging": {"max_bytes": 5000000, "backup_count": 5, "max_lines_soft": 50000},' + #13#10 +
-    '  "startup": {"start_with_windows": true, "start_minimized_to_tray": false},' + #13#10 +
+    '  "startup": {"start_with_windows": true, "start_minimized_to_tray": true},' + #13#10 +
     '  "ui": {"minimize_to_tray": true, "close_to_tray": true, "event_filter": "Alle anzeigen"}' + #13#10 +
     '}' + #13#10;
 

@@ -16,7 +16,7 @@ from internet_monitor_pro.services.config_service import ConfigService
 from internet_monitor_pro.services.log_service import LogService
 from internet_monitor_pro.services.notification_service import NotificationConfig, NotificationService
 from internet_monitor_pro.services.report_service import ReportService
-from internet_monitor_pro.services.startup_service import StartupService
+from internet_monitor_pro.services.startup_service import StartupService, should_notify_duplicate_start
 
 
 class AppController:
@@ -24,6 +24,10 @@ class AppController:
         self.app = app
         self.config_service = ConfigService()
         initial_cfg = self.config_service.get_all()
+        StartupService.set_enabled(
+            bool(initial_cfg["startup"]["start_with_windows"]),
+            bool(initial_cfg["startup"]["start_minimized_to_tray"]),
+        )
         self.log_service = LogService(max_bytes=int(initial_cfg["logging"]["max_bytes"]), backup_count=int(initial_cfg["logging"]["backup_count"]))
         self.report_service = ReportService(self.log_service.reports_dir)
 
@@ -220,7 +224,10 @@ class AppController:
         merged = self._deep_merge(current, extracted)
         self.config_service.save(merged)
         self.log_service.reconfigure(max_bytes=int(merged["logging"]["max_bytes"]), backup_count=int(merged["logging"]["backup_count"]))
-        StartupService.set_enabled(bool(merged["startup"]["start_with_windows"]))
+        StartupService.set_enabled(
+            bool(merged["startup"]["start_with_windows"]),
+            bool(merged["startup"]["start_minimized_to_tray"]),
+        )
         self.engine.apply_schedule()
         self.window.status_bar.showMessage(f"Einstellungen gespeichert: {self.config_service.path}", 3000)
 
@@ -288,7 +295,8 @@ def main() -> int:
     lock = QLockFile(os.path.join(runtime_dir, "internet_monitor_pro.lock"))
     lock.setStaleLockTime(0)
     if not lock.tryLock(100):
-        QMessageBox.information(None, POPUP_TITLE, "Internetprotokoll läuft bereits.")
+        if should_notify_duplicate_start(sys.argv):
+            QMessageBox.information(None, POPUP_TITLE, "Internetprotokoll läuft bereits.")
         return 0
 
     minimized = "--minimized" in sys.argv
