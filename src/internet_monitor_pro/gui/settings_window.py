@@ -1727,4 +1727,3 @@ class SettingsWindow(QMainWindow):
 
     def _emit_daily_report_request(self) -> None:
         self.daily_report_requested.emit(self.date_daily_report.date().toString("yyyy-MM-dd"))
-
